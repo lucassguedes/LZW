@@ -1,0 +1,14 @@
+{
+    "files.associations": {
+        "system_error": "cpp",
+        "array": "cpp",
+        "functional": "cpp",
+        "tuple": "cpp",
+        "type_traits": "cpp",
+        "utility": "cpp",
+        "string_view": "c",
+        "stdio.h": "c",
+        "cmath": "cpp",
+        "complex": "cpp"
+    }
+}
