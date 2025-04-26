@@ -1,7 +1,7 @@
 #include "encoder.h"
 
 
-void write_code_to_file(FILE *outfile, Symbol *sb, uint8_t *outbuffer, int *outbuffer_length)
+void write_code_to_file(FILE *outfile, Token *sb, uint8_t *outbuffer, int *outbuffer_length)
 {
 
     int bits_to_write = sb->code.length;

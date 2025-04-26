@@ -1,9 +1,9 @@
 #include "hash.h"
 
-void add_item(Item* map[], Symbol symb){
+void add_item(Item* map[], Token symb){
     int index = hash(symb.repr);    
     Item* new_item = (Item*)malloc(sizeof(Item));
-    new_item->value = (Symbol*)malloc(sizeof(Symbol));
+    new_item->value = (Token*)malloc(sizeof(Token));
     new_item->value->code = symb.code;
     new_item->value->counter = symb.counter;
     new_item->value->repr = (char*)malloc(sizeof(char)*(strlen(symb.repr) + 1));
@@ -85,7 +85,7 @@ void increment_item(Item* map[], char* key){
     }
 }
 
-Symbol* get_item(Item* map[], char* key){
+Token* get_item(Item* map[], char* key){
     int index = hash(key);
 
     Item* it = map[index];
@@ -108,7 +108,7 @@ void show_map(Item* map[], int size){
         Item* it = map[i];
         while(it != NULL){
             printf("Item %d:\n", counter);
-            printf("\tSymbol: %s\n", it->value->repr);
+            printf("\tToken: %s\n", it->value->repr);
             printf("\tCounter: %d\n", it->value->counter);
             get_bin_str(it->value, buffer);
             printf("\tCode: %s\n", buffer);
@@ -148,9 +148,9 @@ int hash(char* key){
 	return (int)floor(M*(k*A - floor(k*A)));
 }
 
-int compare_symbols(const void * a, const void * b){
-    Symbol* sa = *(Symbol**)a;
-    Symbol* sb = *(Symbol**)b;
+int compare_Tokens(const void * a, const void * b){
+    Token* sa = *(Token**)a;
+    Token* sb = *(Token**)b;
 	int counter_cmp = sa->counter - sb->counter;
 	if(!counter_cmp){
 		return strcmp(sb->repr, sa->repr);

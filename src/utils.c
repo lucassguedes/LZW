@@ -1,6 +1,6 @@
 #include "utils.h"
 
-void get_bin_str(Symbol* symb, char buffer[]){
+void get_bin_str(Token* symb, char buffer[]){
 	uint64_t value = symb->code.value;
 	const int length = symb->code.length;
 	buffer[length] = '\0';

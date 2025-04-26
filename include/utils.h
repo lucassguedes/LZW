@@ -4,6 +4,6 @@
 #include "hash.h"
 
 
-void get_bin_str(Symbol* symb, char buffer[]);
+void get_bin_str(Token* symb, char buffer[]);
 
 #endif

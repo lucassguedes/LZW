@@ -9,12 +9,12 @@ typedef struct Code{
     int length;
 }Code;
 
-typedef struct Symbol{
+typedef struct Token{
     char* repr;
     int counter;
     Code code;
-}Symbol;
+}Token;
 
-void write_code_to_file(FILE* outfile, Symbol* sb, uint8_t* outbuffer, int* remaining_bits);
+void write_code_to_file(FILE* outfile, Token* sb, uint8_t* outbuffer, int* remaining_bits);
 
 #endif
