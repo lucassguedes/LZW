@@ -1,5 +1,22 @@
 #include "lzw.h"
 
+void add_to_dict(Item** dictionary, char* phrase, int* curr_code, int* curr_code_length){
+    Token newtok;
+    
+    newtok.code.value = *curr_code;
+    newtok.code.length = *curr_code_length;
+    newtok.counter = 0;
+    newtok.repr = (char*)malloc(sizeof(char)*strlen(phrase) + 1);
+    strcpy(newtok.repr, phrase);
+    add_item(dictionary, newtok);
+
+    curr_code++;
+
+    if(log2(*curr_code) > *curr_code_length){
+        (*curr_code_length)++;
+    }
+}
+
 void compress_file(char* filepath){
     FILE* file = fopen(filepath, "r");
 
@@ -10,23 +27,20 @@ void compress_file(char* filepath){
     Item** dictionary = malloc(sizeof(Item*)*dict_size);
 
     char buffer[100];
-    Token newtok;
+    
+
+
+    int curr_code = 0;
+    int curr_code_length = 8;
 
     char c = ' ';
     sprintf(buffer, "%c", c);
-    newtok.code.length = newtok.code.value = 0;
-    newtok.counter = 0;
-    newtok.repr = (char*)malloc(sizeof(char)*strlen(buffer) + 1);
-    strcpy(newtok.repr, buffer);
-    add_item(dictionary, newtok);
+    
+    add_to_dict(dictionary, buffer, &curr_code, &curr_code_length);
 
     for(char c = 'a'; c <= 'z'; c++){
         sprintf(buffer, "%c", c);
-        newtok.code.length = newtok.code.value = 0;
-        newtok.counter = 0;
-        newtok.repr = (char*)malloc(sizeof(char)*strlen(buffer) + 1);
-        strcpy(newtok.repr, buffer);
-        add_item(dictionary, newtok);
+        add_to_dict(dictionary, buffer, &curr_code, &curr_code_length);
     }
 
     char byte;
@@ -51,20 +65,13 @@ void compress_file(char* filepath){
         }
         
         /*Adicionando ao dicionário*/
-        newtok.code.length = 0;
-        newtok.code.value = 0;
-        newtok.counter = 0;
-        newtok.repr = (char*)malloc(sizeof(char)*strlen(buffer) + 1);
-        strcpy(newtok.repr, buffer);
-
         printf("Adicionando \"%s\" ao dicionário...\n", buffer);
+        add_to_dict(dictionary, buffer, &curr_code, &curr_code_length);
+    
         byte = buffer[counter];
         sprintf(buffer, "%c", byte);
-        counter = 0;
+        counter = 1;
         getchar(); 
-        add_item(dictionary, newtok);
-
-        counter++;
     }
     
     fclose(file);

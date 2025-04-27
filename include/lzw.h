@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include "hash.h"
 
-
+void add_to_dict(Item** dictionary, char* phrase, int* curr_code, int* curr_code_length);
 void compress_file(char* filepath);
 
 
