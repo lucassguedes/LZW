@@ -27,7 +27,7 @@ int main(int argc, char** argv){
 	}
 
 	if(!strcmp(argv[3], "--compress")){
-		compress_file(argv[1]);
+		compress_file(argv[1], argv[2]);
 	}
 
 	return 0;
