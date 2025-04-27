@@ -3,6 +3,7 @@
 #include <string.h>
 #include "file_formatter.h"
 #include "hash.h"
+#include "lzw.h"
 #include "utils.h"
 
 
@@ -23,6 +24,10 @@ int main(int argc, char** argv){
 		initialize_convertion_table(utf8_ascii_table);
 		format_file(argv[1], argv[2], utf8_ascii_table);
 		return 0;
+	}
+
+	if(!strcmp(argv[3], "--compress")){
+		compress_file(argv[1]);
 	}
 
 	return 0;
