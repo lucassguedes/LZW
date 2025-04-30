@@ -1,17 +1,19 @@
 #include "encoder.h"
 #include "utils.h"
 
-void write_code_to_file(FILE *outfile, Token *sb, uint8_t *outbuffer, int *outbuffer_length)
+void write_code_to_file(FILE *outfile, Token *sb, int code_length, uint8_t *outbuffer, int *outbuffer_length)
 {
 
-    int bits_to_write = sb->code.length;
+    int bits_to_write = code_length;
     uint64_t code = sb->code.value;
 
     char bin_str[100];
 
+    sb->code.length = code_length;
+
     get_bin_str(sb, bin_str);
 
-    printf("Escrevendo \033[0;32m%s (\"%s\")\033[0m na saída...\n", bin_str, sb->repr);
+    printf("Escrevendo \033[0;32m%s (\"%s\")\033[0m na saída - %d bits\n", bin_str, sb->repr, code_length);
 
     int bits_to_ignore;
     while (bits_to_write > *outbuffer_length)

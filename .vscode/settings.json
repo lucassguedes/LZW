@@ -9,6 +9,7 @@
         "string_view": "c",
         "stdio.h": "c",
         "cmath": "cpp",
-        "complex": "cpp"
+        "complex": "cpp",
+        "cstddef": "c"
     }
 }

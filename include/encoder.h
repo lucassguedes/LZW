@@ -15,6 +15,6 @@ typedef struct Token{
     Code code;
 }Token;
 
-void write_code_to_file(FILE* outfile, Token* sb, uint8_t* outbuffer, int* remaining_bits);
+void write_code_to_file(FILE* outfile, Token* sb, int code_length, uint8_t* outbuffer, int* remaining_bits);
 
 #endif

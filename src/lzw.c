@@ -18,7 +18,7 @@ void add_to_dict(Item** dictionary, char* phrase, int* curr_code, int* curr_code
 }
 
 /*Utilizado no processo de descompressão*/
-void add_to_dict_at(Item** dictionary, uint64_t index, char* phrase, int* curr_code_length){
+void add_to_dict_at(Item** dictionary, int* dict_size, uint64_t index, char* phrase, int* curr_code_length){
     Token newtok;
     
     newtok.code.value = 0;
@@ -27,6 +27,13 @@ void add_to_dict_at(Item** dictionary, uint64_t index, char* phrase, int* curr_c
     newtok.repr = (char*)malloc(sizeof(char)*(strlen(phrase) + 1));
     strcpy(newtok.repr, phrase);
     add_item_at(dictionary, newtok, index);
+    (*dict_size)++;
+
+    if((pow(2,*curr_code_length)) == *dict_size + 1){
+        printf("\033[0;31mDicionário deve crescer para %d bits..\033[0m\n", *curr_code_length + 1);
+        (*curr_code_length)++;
+    }
+
 
     free(newtok.repr);
 }
@@ -67,7 +74,7 @@ void compress_file(char* filepath, char* outfilepath){
     uint8_t outbuffer;
     int remaining_bits = 8;
     while((byte = fgetc(file)) != EOF){
-        printf("byte: %c\n", byte);
+        printf("curr_code: %d, byte: %c\n", curr_code, byte);
         getchar();
 
         if(!counter){
@@ -90,7 +97,7 @@ void compress_file(char* filepath, char* outfilepath){
         printf("Adicionando \"%s\" ao dicionário...\n", buffer);
         add_to_dict(dictionary, buffer, &curr_code, &curr_code_length);
 
-        write_code_to_file(outfile, prev_item, &outbuffer, &remaining_bits);
+        write_code_to_file(outfile, prev_item, curr_code_length, &outbuffer, &remaining_bits);
     
         byte = buffer[counter];
         sprintf(buffer, "%c", byte);
@@ -99,7 +106,7 @@ void compress_file(char* filepath, char* outfilepath){
         getchar(); 
     }
 
-    write_code_to_file(outfile, item, &outbuffer, &remaining_bits);
+    write_code_to_file(outfile, item, curr_code_length, &outbuffer, &remaining_bits);
     
     fclose(file);
 }
@@ -121,7 +128,7 @@ void decompress_file(char* filepath, char* outfilepath){
         exit(-1);
     }
 
-    const int dict_size = 50000;
+    const int dict_size = 5000000;
 
     Item** dictionary = malloc(sizeof(Item*)*dict_size);
 
@@ -133,7 +140,9 @@ void decompress_file(char* filepath, char* outfilepath){
     char c = ' ';
     sprintf(buffer, "%c", c);
     
-    add_to_dict_at(dictionary, 0, buffer, &curr_code_length);
+    int actual_dict_size = 0;
+
+    add_to_dict_at(dictionary, &actual_dict_size, 0, buffer, &curr_code_length);
 
     printf("Dicionário:\n");
     printf("0 -  \n");
@@ -141,7 +150,7 @@ void decompress_file(char* filepath, char* outfilepath){
     for(char c = 'a'; c <= 'z'; c++){
         sprintf(buffer, "%c", c);
         printf("%d - %s\n", c - 'a' + 1, buffer);
-        add_to_dict_at(dictionary, c - 'a' + 1, buffer, &curr_code_length);
+        add_to_dict_at(dictionary, &actual_dict_size, c - 'a' + 1, buffer, &curr_code_length);
     }
 
     int remaining_bits = curr_code_length;
@@ -161,14 +170,21 @@ void decompress_file(char* filepath, char* outfilepath){
     fseek(file, 0L, SEEK_SET);
 
     uint32_t byte_counter = 0;
-    while((byte = fgetc(file)) != EOF){
+    int ignored_bits;
+    while(byte_counter < file_size){
+        printf("curr_code: %d\n", curr_code);
+        byte = fgetc(file);
         printf("Progress: %d/%d\n", byte_counter, file_size);
+        uint8_t ubyte = byte;
+        printf("Unsigned byte: %u, Dict size: %d\n", ubyte, actual_dict_size);
+
         if(remaining_bits < 8){
-            curr_code |= byte & ((int)pow(2, remaining_bits) - 1);
+            ignored_bits = 8 - remaining_bits; //Número de bits ignorados (mais significativos)
+            printf("\033[0;35mMáscara:\033[0m %d", (255 - ((int)pow(2, ignored_bits) - 1)));
+            curr_code |= (ubyte & (255 - ((int)pow(2, ignored_bits) - 1))) >> ignored_bits;
             extracted = remaining_bits;
-            byte = byte >> remaining_bits;
         }else{
-            curr_code |= byte;
+            curr_code |= ubyte;
             extracted = 8;
         }
         remaining_bits -= extracted;
@@ -178,15 +194,16 @@ void decompress_file(char* filepath, char* outfilepath){
         if(!remaining_bits){//Se os bits do código atual foram todos lidos
             //Verifica se o símbolo cujo código foi lido já está no dicionário
             prev_item = item;
+            printf("curr_code: %lu, current byte: %u\n", curr_code, ubyte);
             item = get_item_at(dictionary, curr_code);
 
-            strcat(buffer, item->repr);
+            sprintf(buffer, "%s%c", buffer, item->repr[0]);
 
             if(prev_item == NULL) {
                 prev_item = item;
             }else{
-                printf("Símbolo encontrado: %s\n", item->repr);
-                add_to_dict_at(dictionary, ++newcode, buffer, &curr_code_length);
+                printf("Símbolo encontrado: %s, index = %lu, bits: %d\n", item->repr, curr_code, curr_code_length);
+                add_to_dict_at(dictionary, &actual_dict_size, ++newcode, buffer, &curr_code_length);
                 printf("Adicionando \033[0;35m\"%s\"\033[0m ao dicionário, com código %d\n", buffer, newcode);
                 
                 if(byte_counter == file_size){
@@ -203,10 +220,31 @@ void decompress_file(char* filepath, char* outfilepath){
 
             remaining_bits = curr_code_length;
             curr_code = 0;
-            continue;
         }
-        curr_code = byte;
-        curr_code = curr_code << extracted;
+
+        int shift = (remaining_bits < 8) ? remaining_bits : 8;
+        if(extracted == 8){// SE o byte foi completamente lido
+            printf("\033[0;32mO byte foi completamente lido...\033[0m\n");
+            printf("\tBits restantes: %d\n", remaining_bits);
+            curr_code = curr_code << shift;
+        }else{//CASO CONTRÁRIO, significa que o código já foi completamente lido, mas sobraram bits no byte
+            printf("\033[0;33mO byte NÃO foi completamente lido (só foram lidos %d bits). Faltam %d bits, inserindo valor restante no próximo...\033[0m\n", extracted , ignored_bits);
+            curr_code = ubyte & ((int)pow(2, ignored_bits) - 1);
+            remaining_bits -= ignored_bits;
+            printf("\tBits restantes: %d\n", remaining_bits);
+
+
+            curr_code = curr_code << remaining_bits;
+
+            if(remaining_bits == 0){
+                printf("\033[0;31mEIIII, TA NA HORA DE ESCREVER!\033[0m\n");
+                getchar();
+            }
+
+        }
+        
+
+
     }
 
     fclose(file);
