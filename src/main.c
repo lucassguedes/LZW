@@ -30,5 +30,9 @@ int main(int argc, char** argv){
 		compress_file(argv[1], argv[2]);
 	}
 
+	if(!strcmp(argv[3], "--decompress")){
+		decompress_file(argv[1], argv[2]);
+	}
+
 	return 0;
 }

@@ -23,6 +23,22 @@ void add_item(Item* map[], Token symb){
     }
 }
 
+/**
+ * Utilizado durante a decodificação, onde as chaves são os códigos dos tokens
+ */
+void add_item_at(Item* map[], Token symb, uint64_t index){ 
+    Item* new_item = (Item*)malloc(sizeof(Item));
+    new_item->value = (Token*)malloc(sizeof(Token));
+    new_item->value->code = symb.code;
+    new_item->value->counter = symb.counter;
+    new_item->value->repr = (char*)malloc(sizeof(char)*(strlen(symb.repr) + 1));
+    new_item->next = NULL;
+    strcpy(new_item->value->repr, symb.repr);
+
+    /*Nesse caso não há risco de colisão, já que cada código é único*/
+    map[index] = new_item;
+}
+
 void remove_item(Item* map[], char* key){
     const int index = hash(key);
     
@@ -99,6 +115,19 @@ Token* get_item(Item* map[], char* key){
     }
 
     return NULL; 
+}
+
+
+/*Utilizado no processo de decodificação do LZW*/
+Token* get_item_at(Item* map[], uint64_t index){
+    Item* it = map[index];
+    printf("Index: %d - ", index);
+    /*Como o índice é o código, não há chance de colisão*/
+    if(it == NULL){
+        return NULL;
+    }
+
+    return it->value;
 }
 
 void show_map(Item* map[], int size){
