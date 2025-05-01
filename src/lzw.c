@@ -105,6 +105,13 @@ void compress_file(char* filepath, char* outfilepath){
     }
 
     write_code_to_file(outfile, item, curr_code_length, &outbuffer, &remaining_bits);
+
+    printf("Outbuffer available space: %d\n", remaining_bits);
+
+    if(remaining_bits){
+        outbuffer = outbuffer << remaining_bits;
+        fputc(outbuffer, outfile);
+    }
     
     fclose(file);
 }
@@ -219,13 +226,13 @@ void decompress_file(char* filepath, char* outfilepath){
                 getchar();
             }
 
-            last_add_idx = newcode;
             printf("Adicionando \033[0;35m\"%s\"\033[0m ao dicionário, com código %d\n", buffer, newcode);
             
             if(!first_symbol){
                 if(byte_counter == file_size){
-                    fprintf(outfile, "%s", buffer);
-                    printf("[byte_counter = %d, file_size = %d] - Escrevendo \033[0;35m\"%s\"\033[0m na saída\n", byte_counter, file_size, buffer);
+                    printf("dictionary[last_add_idx]->value->repr: %s\n", dictionary[last_add_idx]->value->repr);
+                    fprintf(outfile, "%s", dictionary[last_add_idx]->value->repr);
+                    printf("[byte_counter = %d, file_size = %d] - Escrevendo \033[0;35m\"%s\"\033[0m na saída\n", byte_counter, file_size, dictionary[last_add_idx]->value->repr);
                 }else{
                     fprintf(outfile, "%s", prev_item->repr);
                     printf("[byte_counter = %d, file_size = %d] - Escrevendo \033[0;35m\"%s\"\033[0m na saída\n", byte_counter, file_size, prev_item->repr);
@@ -236,6 +243,8 @@ void decompress_file(char* filepath, char* outfilepath){
                     }
                 }
             }
+            last_add_idx = newcode;
+
             first_symbol = false;
             
             // getchar();

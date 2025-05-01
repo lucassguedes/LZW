@@ -15,6 +15,7 @@ void write_code_to_file(FILE *outfile, Token *sb, int code_length, uint8_t *outb
 
     printf("Escrevendo \033[0;32m%s (\"%s\")\033[0m na saída - %d bits\n", bin_str, sb->repr, code_length);
 
+    printf("outbuffer: %d, length: %d\n", *outbuffer, *outbuffer_length);
     int bits_to_ignore;
     while (bits_to_write > *outbuffer_length)
     {
@@ -30,9 +31,11 @@ void write_code_to_file(FILE *outfile, Token *sb, int code_length, uint8_t *outb
         // printf("\t\033[0;31mNeste byte, vamos colocar apenas %d bits mais significativos do código, que terá valor %d\033[0m\n",*outbuffer_length, code_slice);
 
         code = code & ((int)pow(2, bits_to_ignore) - 1); /*Removendo a parte do código que está para ser escrita*/
+        printf("\toutbuffer: %d, code_slice: %d\n", *outbuffer, code_slice);
         bits_to_write -= *outbuffer_length;
 
         /*Escrevendo na saída*/
+
         fputc(*outbuffer, outfile);
         *outbuffer = 0; /*Limpando o buffer*/
         *outbuffer_length = 8;
