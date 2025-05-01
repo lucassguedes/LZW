@@ -75,7 +75,6 @@ void compress_file(char* filepath, char* outfilepath){
     int remaining_bits = 8;
     while((byte = fgetc(file)) != EOF){
         printf("curr_code: %d, byte: %c\n", curr_code, byte);
-        getchar();
 
         if(!counter){
             sprintf(buffer, "%c", byte);
@@ -103,7 +102,6 @@ void compress_file(char* filepath, char* outfilepath){
         sprintf(buffer, "%c", byte);
         counter = 1;
         item = get_item(dictionary, buffer);
-        getchar(); 
     }
 
     write_code_to_file(outfile, item, curr_code_length, &outbuffer, &remaining_bits);
@@ -180,7 +178,7 @@ void decompress_file(char* filepath, char* outfilepath){
 
         if(remaining_bits < 8){
             ignored_bits = 8 - remaining_bits; //Número de bits ignorados (mais significativos)
-            printf("\033[0;35mMáscara:\033[0m %d", (255 - ((int)pow(2, ignored_bits) - 1)));
+            printf("\033[0;35mMáscara:\033[0m %d\n", (255 - ((int)pow(2, ignored_bits) - 1)));
             curr_code |= (ubyte & (255 - ((int)pow(2, ignored_bits) - 1))) >> ignored_bits;
             extracted = remaining_bits;
         }else{
@@ -216,31 +214,55 @@ void decompress_file(char* filepath, char* outfilepath){
             }
             sprintf(buffer, "%s", item->repr);
             printf("String encontrada no dicionário: \033[0;35m\"%s\"\033[0m\n", item->repr);
-            getchar();
-
+            
             remaining_bits = curr_code_length;
+            
+            if(extracted < 8){
+
+                printf("\033[0;33m[Ramo 1] O byte NÃO foi completamente lido (só foram lidos %d bits). Faltam %d bits, inserindo valor restante no próximo...\033[0m\n", extracted , ignored_bits);
+                curr_code = ubyte & ((int)pow(2, ignored_bits) - 1);
+                remaining_bits -= ignored_bits;
+                printf("\tcodigo: %d\n", curr_code);
+                printf("\tBits restantes: %d\n", remaining_bits);
+
+                int shift = (remaining_bits < 8) ? remaining_bits : 8; 
+    
+                if(remaining_bits == 0){
+                    printf("\033[0;31m[Ramo 1] ALERTA: remaining_bits = 0\033[0m\n");
+                    getchar();
+                }
+
+                curr_code = curr_code << shift;    
+                continue;
+            }
             curr_code = 0;
+            continue;
         }
 
-        int shift = (remaining_bits < 8) ? remaining_bits : 8;
-        if(extracted == 8){// SE o byte foi completamente lido
+        //Se chegou até aqui, é porque ainda faltam bits a serem lidos para completar o código
+        //Determinando quantos bits devem ser liberados no código, para receber os que estão por vir
+        int shift = (remaining_bits < 8) ? remaining_bits : 8; 
+
+        if(extracted == 8){// SE o byte atual foi completamente lido
             printf("\033[0;32mO byte foi completamente lido...\033[0m\n");
             printf("\tBits restantes: %d\n", remaining_bits);
-            curr_code = curr_code << shift;
-        }else{//CASO CONTRÁRIO, significa que o código já foi completamente lido, mas sobraram bits no byte
+            curr_code = curr_code << shift; //Liberamos espaço para os bits que estão por vir
+        }else{//Caso contrário, ainda sobraram bits no byte atual, colocamos o restante em um novo código
             printf("\033[0;33mO byte NÃO foi completamente lido (só foram lidos %d bits). Faltam %d bits, inserindo valor restante no próximo...\033[0m\n", extracted , ignored_bits);
             curr_code = ubyte & ((int)pow(2, ignored_bits) - 1);
             remaining_bits -= ignored_bits;
+            printf("\tcodigo: %d\n", curr_code);
             printf("\tBits restantes: %d\n", remaining_bits);
 
-
-            curr_code = curr_code << remaining_bits;
+            shift = (remaining_bits < 8) ? remaining_bits : 8; 
 
             if(remaining_bits == 0){
-                printf("\033[0;31mEIIII, TA NA HORA DE ESCREVER!\033[0m\n");
+                printf("\033[0;31m[Ramo 2] ALERTA: remaining_bits = 0\033[0m\n");
                 getchar();
             }
 
+
+            curr_code = curr_code << remaining_bits;
         }
         
 
