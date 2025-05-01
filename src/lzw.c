@@ -29,7 +29,7 @@ void add_to_dict_at(Item** dictionary, int* dict_size, uint64_t index, char* phr
     add_item_at(dictionary, newtok, index);
     (*dict_size)++;
 
-    if((pow(2,*curr_code_length)) == *dict_size + 1){
+    if((pow(2,*curr_code_length)) == *dict_size){
         printf("\033[0;31mDicionário deve crescer para %d bits..\033[0m\n", *curr_code_length + 1);
         (*curr_code_length)++;
     }
@@ -169,7 +169,10 @@ void decompress_file(char* filepath, char* outfilepath){
 
     uint32_t byte_counter = 0;
     int ignored_bits;
-    while(byte_counter < file_size){
+
+    int last_add_idx;
+    bool first_symbol = true;
+    while(byte_counter <= file_size){
         printf("curr_code: %d\n", curr_code);
         byte = fgetc(file);
         printf("Progress: %d/%d\n", byte_counter, file_size);
@@ -195,15 +198,27 @@ void decompress_file(char* filepath, char* outfilepath){
             printf("curr_code: %lu, current byte: %u\n", curr_code, ubyte);
             item = get_item_at(dictionary, curr_code);
 
-            sprintf(buffer, "%s%c", buffer, item->repr[0]);
+            sprintf(buffer, "%s", item->repr);
 
-            if(prev_item == NULL) {
+
+            if(prev_item == NULL){
                 prev_item = item;
             }else{
-                printf("Símbolo encontrado: %s, index = %lu, bits: %d\n", item->repr, curr_code, curr_code_length);
-                add_to_dict_at(dictionary, &actual_dict_size, ++newcode, buffer, &curr_code_length);
-                printf("Adicionando \033[0;35m\"%s\"\033[0m ao dicionário, com código %d\n", buffer, newcode);
-                
+                printf("Corrigindo no dicionário, o que era \033[0;35m\"%s\"\033[0m tornou-se ", dictionary[last_add_idx]->value->repr);
+        
+                dictionary[last_add_idx]->value->repr[strlen(dictionary[last_add_idx]->value->repr) - 1] = item->repr[0];
+                printf("\033[0;35m\"%s\"\033[0m\n", dictionary[last_add_idx]->value->repr);
+            }
+
+            printf("Símbolo encontrado: %s, index = %lu, bits: %d\n", item->repr, curr_code, curr_code_length);
+            
+            strcat(buffer, "?");
+            add_to_dict_at(dictionary, &actual_dict_size, ++newcode, buffer, &curr_code_length);
+            last_add_idx = newcode;
+            printf("Adicionando \033[0;35m\"%s\"\033[0m ao dicionário, com código %d\n", buffer, newcode);
+            getchar();
+
+            if(!first_symbol){
                 if(byte_counter == file_size){
                     fprintf(outfile, "%s", buffer);
                     printf("[byte_counter = %d, file_size = %d] - Escrevendo \033[0;35m\"%s\"\033[0m na saída\n", byte_counter, file_size, buffer);
@@ -212,6 +227,10 @@ void decompress_file(char* filepath, char* outfilepath){
                     printf("[byte_counter = %d, file_size = %d] - Escrevendo \033[0;35m\"%s\"\033[0m na saída\n", byte_counter, file_size, prev_item->repr);
                 }
             }
+            first_symbol = false;
+
+
+            
             sprintf(buffer, "%s", item->repr);
             printf("String encontrada no dicionário: \033[0;35m\"%s\"\033[0m\n", item->repr);
             
@@ -245,6 +264,7 @@ void decompress_file(char* filepath, char* outfilepath){
 
         if(extracted == 8){// SE o byte atual foi completamente lido
             printf("\033[0;32mO byte foi completamente lido...\033[0m\n");
+            printf("\tcodigo: %d\n", curr_code);
             printf("\tBits restantes: %d\n", remaining_bits);
             curr_code = curr_code << shift; //Liberamos espaço para os bits que estão por vir
         }else{//Caso contrário, ainda sobraram bits no byte atual, colocamos o restante em um novo código
