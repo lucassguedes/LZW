@@ -198,26 +198,30 @@ void decompress_file(char* filepath, char* outfilepath){
             printf("curr_code: %lu, current byte: %u\n", curr_code, ubyte);
             item = get_item_at(dictionary, curr_code);
 
-            sprintf(buffer, "%s", item->repr);
-
-
             if(prev_item == NULL){
                 prev_item = item;
             }else{
                 printf("Corrigindo no dicionário, o que era \033[0;35m\"%s\"\033[0m tornou-se ", dictionary[last_add_idx]->value->repr);
-        
                 dictionary[last_add_idx]->value->repr[strlen(dictionary[last_add_idx]->value->repr) - 1] = item->repr[0];
                 printf("\033[0;35m\"%s\"\033[0m\n", dictionary[last_add_idx]->value->repr);
             }
+
+            sprintf(buffer, "%s", item->repr);
+
 
             printf("Símbolo encontrado: %s, index = %lu, bits: %d\n", item->repr, curr_code, curr_code_length);
             
             strcat(buffer, "?");
             add_to_dict_at(dictionary, &actual_dict_size, ++newcode, buffer, &curr_code_length);
+
+            if(buffer[4] == '?'){
+                printf("\033[0;33mBuffer: %s\033[0m\n", buffer);
+                getchar();
+            }
+
             last_add_idx = newcode;
             printf("Adicionando \033[0;35m\"%s\"\033[0m ao dicionário, com código %d\n", buffer, newcode);
-            getchar();
-
+            
             if(!first_symbol){
                 if(byte_counter == file_size){
                     fprintf(outfile, "%s", buffer);
@@ -225,10 +229,16 @@ void decompress_file(char* filepath, char* outfilepath){
                 }else{
                     fprintf(outfile, "%s", prev_item->repr);
                     printf("[byte_counter = %d, file_size = %d] - Escrevendo \033[0;35m\"%s\"\033[0m na saída\n", byte_counter, file_size, prev_item->repr);
+                    for(int k = 0; k < strlen(prev_item->repr); k++){
+                        if(prev_item->repr[k] == '?'){
+                            getchar();
+                        }
+                    }
                 }
             }
             first_symbol = false;
-
+            
+            // getchar();
 
             
             sprintf(buffer, "%s", item->repr);
@@ -248,7 +258,7 @@ void decompress_file(char* filepath, char* outfilepath){
     
                 if(remaining_bits == 0){
                     printf("\033[0;31m[Ramo 1] ALERTA: remaining_bits = 0\033[0m\n");
-                    getchar();
+                    // getchar();
                 }
 
                 curr_code = curr_code << shift;    
@@ -278,7 +288,7 @@ void decompress_file(char* filepath, char* outfilepath){
 
             if(remaining_bits == 0){
                 printf("\033[0;31m[Ramo 2] ALERTA: remaining_bits = 0\033[0m\n");
-                getchar();
+                // getchar();
             }
 
 
