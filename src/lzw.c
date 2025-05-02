@@ -37,7 +37,7 @@ void add_to_dict_at(Item** dictionary, int* dict_size, uint64_t index, char* phr
     free(newtok.repr);
 }
 
-void compress_file(char* filepath, char* outfilepath){
+void compress_file(char* filepath, char* outfilepath, int save_model){
     FILE* file = fopen(filepath, "r");
     FILE* outfile = fopen(outfilepath, "w");
 
@@ -95,7 +95,9 @@ void compress_file(char* filepath, char* outfilepath){
         printf("Adicionando \"%s\" ao dicionário...\n", buffer);
         add_to_dict(dictionary, buffer, &curr_code, &curr_code_length);
 
-        write_code_to_file(outfile, prev_item, curr_code_length, &outbuffer, &remaining_bits);
+        if(!save_model){
+            write_code_to_file(outfile, prev_item, curr_code_length, &outbuffer, &remaining_bits);
+        }
     
         byte = buffer[counter];
         sprintf(buffer, "%c", byte);
@@ -103,14 +105,29 @@ void compress_file(char* filepath, char* outfilepath){
         item = get_item(dictionary, buffer);
     }
 
-    write_code_to_file(outfile, item, curr_code_length, &outbuffer, &remaining_bits);
+    if(!save_model){
+        write_code_to_file(outfile, item, curr_code_length, &outbuffer, &remaining_bits);
+    }
 
     printf("Outbuffer available space: %d\n", remaining_bits);
 
-    if(remaining_bits){
+    if(!save_model && remaining_bits){
         outbuffer = outbuffer << remaining_bits;
         fputc(outbuffer, outfile);
     }
+
+
+
+    if(save_model){
+        printf("Dicionário:\n");
+        for(int i = 0; i < dict_size; i++){
+            if(dictionary[i] != NULL){
+                printf("%s\n", dictionary[i]->value->repr);
+                fprintf(outfile, "%ld,%d,%s\n", dictionary[i]->value->code.value, dictionary[i]->value->code.length, dictionary[i]->value->repr);
+            }
+        }
+    }
+
 
     destroy_map(dictionary, dict_size);
     

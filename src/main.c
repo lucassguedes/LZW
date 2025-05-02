@@ -27,7 +27,11 @@ int main(int argc, char** argv){
 	}
 
 	if(!strcmp(argv[3], "--compress")){
-		compress_file(argv[1], argv[2]);
+		if(argc > 4 && !strcmp(argv[4], "--save-model")){
+			compress_file(argv[1], argv[2], 1);
+			return 0;
+		}
+		compress_file(argv[1], argv[2], 0);
 	}
 
 	if(!strcmp(argv[3], "--decompress")){

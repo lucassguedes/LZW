@@ -7,7 +7,7 @@
 #include "encoder.h"
 
 void add_to_dict(Item** dictionary, char* phrase, int* curr_code, int* curr_code_length);
-void compress_file(char* filepath, char* outfilepath);
+void compress_file(char* filepath, char* outfilepath, int save_model);
 void decompress_file(char* filepath, char* outfilepath);
 
 
