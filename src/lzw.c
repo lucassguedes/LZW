@@ -15,6 +15,7 @@ void add_to_dict(Item** dictionary, char* phrase, int* curr_code, int* curr_code
     if(log2(*curr_code) > *curr_code_length){
         (*curr_code_length)++;
     }
+    free(newtok.repr);
 }
 
 /*Utilizado no processo de descompressão*/
@@ -33,8 +34,6 @@ void add_to_dict_at(Item** dictionary, int* dict_size, uint64_t index, char* phr
         printf("\033[0;31mDicionário deve crescer para %d bits..\033[0m\n", *curr_code_length + 1);
         (*curr_code_length)++;
     }
-
-
     free(newtok.repr);
 }
 
@@ -112,7 +111,10 @@ void compress_file(char* filepath, char* outfilepath){
         outbuffer = outbuffer << remaining_bits;
         fputc(outbuffer, outfile);
     }
+
+    destroy_map(dictionary, dict_size);
     
+    fclose(outfile);
     fclose(file);
 }
 
@@ -307,6 +309,8 @@ void decompress_file(char* filepath, char* outfilepath){
 
 
     }
+
+    destroy_map(dictionary, dict_size);
 
     fclose(file);
     fclose(outfile);
