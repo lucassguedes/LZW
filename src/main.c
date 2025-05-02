@@ -27,11 +27,34 @@ int main(int argc, char** argv){
 	}
 
 	if(!strcmp(argv[3], "--compress")){
-		if(argc > 4 && !strcmp(argv[4], "--save-model")){
-			compress_file(argv[1], argv[2], 1);
-			return 0;
+		bool save_model = false;
+		bool load_model = false;
+		char* model_filepath = NULL;
+
+
+		if(argc > 4){
+			for(int i = 4; i < argc; i++){
+				printf("argv[i] = %s\n", argv[i]);
+				if(!strcmp(argv[i], "--save-model")){
+					save_model = true;	
+					continue;
+				}
+
+				if(!strcmp(argv[i], "--load-model") && !load_model){
+					if(i + 1 < argc){
+						printf("Carregando modelo...\n");
+						load_model = true;
+						model_filepath = (char*)malloc(sizeof(char)*(strlen(argv[i+1]) + 1));
+						strcpy(model_filepath, argv[i+1]);
+					}
+					i++;
+				}
+
+			}
 		}
-		compress_file(argv[1], argv[2], 0);
+
+		compress_file(argv[1], argv[2], model_filepath, save_model, load_model);
+		free(model_filepath);
 	}
 
 	if(!strcmp(argv[3], "--decompress")){

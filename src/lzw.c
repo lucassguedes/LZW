@@ -37,7 +37,7 @@ void add_to_dict_at(Item** dictionary, int* dict_size, uint64_t index, char* phr
     free(newtok.repr);
 }
 
-void compress_file(char* filepath, char* outfilepath, int save_model){
+void compress_file(char* filepath, char* outfilepath, char* model_filepath, bool save_model, bool load_model){
     FILE* file = fopen(filepath, "r");
     FILE* outfile = fopen(outfilepath, "w");
 
@@ -54,14 +54,71 @@ void compress_file(char* filepath, char* outfilepath, int save_model){
     int curr_code = 0;
     int curr_code_length = 8;
 
-    char c = ' ';
-    sprintf(buffer, "%c", c);
-    
-    add_to_dict(dictionary, buffer, &curr_code, &curr_code_length);
-
-    for(char c = 'a'; c <= 'z'; c++){
+    if(!load_model){
+        char c = ' ';
         sprintf(buffer, "%c", c);
+        
         add_to_dict(dictionary, buffer, &curr_code, &curr_code_length);
+
+        for(char c = 'a'; c <= 'z'; c++){
+            sprintf(buffer, "%c", c);
+            add_to_dict(dictionary, buffer, &curr_code, &curr_code_length);
+        }
+    }else{
+        FILE* modelfile = fopen(model_filepath, "r");
+
+        char byte;
+
+        printf("Abrindo arquivo de modelo: %s\n", model_filepath);
+
+        Code code;
+    
+        char code_buff[100];
+        char length_buff[100];
+        char phrase_buff[100];
+        char character_str[100];
+
+        sprintf(code_buff, "");
+        sprintf(length_buff, "");
+        sprintf(phrase_buff, "");
+
+        while (fgets(buffer, sizeof(buffer), modelfile) != NULL) {
+            int i;
+            for(i = 0; i < strlen(buffer) && buffer[i] != ','; i++){
+                sprintf(character_str, "%c", buffer[i]);
+                strcat(code_buff, character_str);
+            }
+
+            // printf("Code: %s, ", code_buff);
+
+            int j;
+            for(j = i + 1; j < strlen(buffer) && buffer[j] != ','; j++){
+                sprintf(character_str, "%c", buffer[j]);
+                strcat(length_buff, character_str);
+            }
+
+            // printf("Length: %s, ", length_buff);
+            
+            int k;
+            for(k = j + 1; k < strlen(buffer) && buffer[k] != '\n'; k++){
+                sprintf(character_str, "%c", buffer[k]);
+                strcat(phrase_buff, character_str);
+            }
+
+            // printf("Phrase: %s\n", phrase_buff);
+
+            int code_value = atoi(code_buff);
+            
+            add_to_dict(dictionary, phrase_buff, &code_value, &curr_code_length);
+            curr_code++;
+
+            sprintf(code_buff, "");
+            sprintf(length_buff, "");
+            sprintf(phrase_buff, "");
+
+        }
+
+        fclose(modelfile);
     }
 
     char byte;
@@ -109,6 +166,7 @@ void compress_file(char* filepath, char* outfilepath, int save_model){
         if(!save_model){
             write_code_to_file(outfile, prev_item, curr_code_length, &outbuffer, &remaining_bits);
         }
+        getchar();
     
         byte = buffer[counter];
         sprintf(buffer, "%c", byte);
