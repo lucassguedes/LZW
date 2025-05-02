@@ -72,6 +72,16 @@ void compress_file(char* filepath, char* outfilepath, int save_model){
 
     uint8_t outbuffer;
     int remaining_bits = 8;
+    int written_bits = 0;
+
+    fseek(file, 0L, SEEK_END);
+
+    // Calculando o tamanho do arquivo (em bytes)
+    uint32_t file_size = ftell(file);
+    printf("Size of file: %d\n", file_size);
+    fseek(file, 0L, SEEK_SET);
+
+
     while((byte = fgetc(file)) != EOF){
         printf("curr_code: %d, byte: %c\n", curr_code, byte);
 
@@ -95,6 +105,7 @@ void compress_file(char* filepath, char* outfilepath, int save_model){
         printf("Adicionando \"%s\" ao dicionário...\n", buffer);
         add_to_dict(dictionary, buffer, &curr_code, &curr_code_length);
 
+        written_bits += curr_code_length;
         if(!save_model){
             write_code_to_file(outfile, prev_item, curr_code_length, &outbuffer, &remaining_bits);
         }
@@ -105,28 +116,31 @@ void compress_file(char* filepath, char* outfilepath, int save_model){
         item = get_item(dictionary, buffer);
     }
 
+    written_bits += curr_code_length;
     if(!save_model){
         write_code_to_file(outfile, item, curr_code_length, &outbuffer, &remaining_bits);
     }
 
     printf("Outbuffer available space: %d\n", remaining_bits);
 
-    if(!save_model && remaining_bits){
-        outbuffer = outbuffer << remaining_bits;
-        fputc(outbuffer, outfile);
+    if(remaining_bits){
+        written_bits += curr_code_length;
+        if(!save_model){
+            outbuffer = outbuffer << remaining_bits;
+            fputc(outbuffer, outfile);
+        }
     }
 
-
-
     if(save_model){
-        printf("Dicionário:\n");
         for(int i = 0; i < dict_size; i++){
             if(dictionary[i] != NULL){
-                printf("%s\n", dictionary[i]->value->repr);
                 fprintf(outfile, "%ld,%d,%s\n", dictionary[i]->value->code.value, dictionary[i]->value->code.length, dictionary[i]->value->repr);
             }
         }
     }
+
+    printf("Bits escritos: %d\n", written_bits);
+    printf("Comprimento médio: %.2f bits/símbolo\n", written_bits / (double) file_size);
 
 
     destroy_map(dictionary, dict_size);
